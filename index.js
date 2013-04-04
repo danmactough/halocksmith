@@ -60,6 +60,11 @@ Locksmith.prototype.lock = function(key, cb) {
       _this._redisClient.get(fullKey, function handleGet(err, keyExpires) {
         if (err) return cb(err);
 
+        // no retrying allowed and the key doesn't exist, so there is no deadlock to try to fix
+        if (!_this._retries && !keyExpires) {
+          return cb(new Error('failed to acquire lock for: ' + key));
+        }
+
         function retry() {
           if (++retries > _this._retries) {
             return cb(new Error('maximum retries hit while aquiring lock for: ' + key));
