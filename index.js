@@ -66,7 +66,7 @@ Locksmith.prototype.lock = function(key, cb) {
           setTimeout(aquire, 1000);
         }
 
-        // if the key has not expired
+        // if the key still exists and has not expired
         if (moment().unix() < keyExpires) {
           return retry();
         } else { // try and aquire expired lock
