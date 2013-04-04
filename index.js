@@ -14,8 +14,8 @@ function Locksmith(options) {
   host = options.host || null;
   port = options.port || null;
   prefix = options.prefix || '__locksmith:';
-  timeout = options.timeout || 10;
-  retries = options.retries || 100;
+  timeout = 'timeout' in options ? options.timeout : 10;
+  retries = 'retries' in options ? options.retries : 100;
 
   delete options.host;
   delete options.port;
