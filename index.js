@@ -21,6 +21,7 @@ function Locksmith(options) {
   delete options.port;
   delete options.prefix;
   delete options.timeout;
+  delete options.retries;
 
   if (options.redisClient) {
     this._redisClient = options.redisClient;
