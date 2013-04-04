@@ -61,7 +61,7 @@ Locksmith.prototype.lock = function(key, cb) {
         if (err) return cb(err);
 
         function retry() {
-          if (retries++ > _this._retries) {
+          if (++retries > _this._retries) {
             return cb(new Error('maximum retries hit while aquiring lock for: ' + key));
           }
           setTimeout(aquire, 1000);
