@@ -95,19 +95,23 @@ HALocksmith.prototype.lock = function(key, cb) {
   })();
 };
 
-HALocksmith.prototype._release = function(key, expires) {
-  var fullKey = this._prefix + key
-    , _this = this
-    ;
+HALocksmith.prototype._release = function(key, expires, callback) {
+  var fullKey = this._prefix + key;
+
+  // callback is optional
+  if ('function' !== typeof callback) {
+    callback = function () {};
+  }
 
   // nice! we finished before somebody tries to expires us
   if (moment().unix() < expires) {
     this._redisClient.del(fullKey, function handleDel(err) {
-      if (err) return console.error(err);
+      if (err) return callback(err);
+      callback();
     });
   } else {
     // it's too late, the lock is already being fought for
-    console.error('you released your lock too late on key: ' + key);
+    callback(new Error('you released your lock after expiration on key: ' + key));
   }
 };
 

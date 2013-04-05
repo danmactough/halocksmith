@@ -32,7 +32,7 @@ var lock = require('halocksmith')(options);
  * key {String} (optional): the cluster-wide keyname to lock on; defaults to ''
  * callback {Function}: function to execute when you have the lock; takes two parameters:
  *     - error {Error}
- *     - release {Function}: function to call when you are done with the lock (required in most circumstances);
+ *     - release {Function}: function to call when you are done with the lock (required in most circumstances); takes an optional callback
  */
 lock([key], callback)
 ```
@@ -54,7 +54,11 @@ lock(function(err, release) {
   doSomething();
 
   // Delete the lock; other processes will be able to acquire a new lock
-  release();
+  release(function (err) {
+    // optional callback
+    if (err) return console.error(err);
+    doSomeOtherThing();
+  });
 });
 ```
 - - -
