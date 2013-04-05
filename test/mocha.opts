@@ -1,0 +1,4 @@
+--require test/common.js
+--globals halocksmith,assert
+--reporter spec
+--timeout 5s

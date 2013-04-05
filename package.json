@@ -4,7 +4,7 @@
   "description": "Distributed locking mechanism using haredis",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "make test"
   },
   "repository": {
     "type": "git",
@@ -24,5 +24,8 @@
   "dependencies": {
     "haredis": "~0.2.10",
     "moment": "~1.7.0"
+  },
+  "devDependencies": {
+    "mocha": "~1.9.0"
   }
 }
