@@ -41,7 +41,7 @@ function HALocksmith(options) {
     options = options || { host: '127.0.0.1', port: 6379 };
     if (options.port && !options.host) options.host = '127.0.0.1';
     prefix = options.prefix || '__halocksmith:';
-    timeout = 'timeout' in options ? options.timeout : 10;
+    timeout = 'timeout' in options ? options.timeout : 120;
     retries = 'retries' in options ? options.retries : 100;
     retryTimeout = 'retryTimeout' in options ? options.retryTimeout : 1000;
 
