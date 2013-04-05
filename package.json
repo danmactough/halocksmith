@@ -1,25 +1,28 @@
 {
-  "name": "locksmith",
+  "name": "halocksmith",
   "version": "0.0.1",
-  "description": "distributed locking mechanism using redis",
+  "description": "Distributed locking mechanism using haredis",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/supershabam/locksmith"
+    "url": "git://github.com/danmactough/halocksmith"
   },
   "keywords": [
     "lock",
     "semaphore",
+    "mutex",
     "synchronize",
-    "redis"
+    "redis",
+    "haredis",
+    "high-availability"
   ],
-  "author": "Ian Hansen",
+  "author": "Dan MacTough <danmactough@gmail.com> (http://yabfog.com/)",
   "license": "MIT",
   "dependencies": {
-    "redis": "~0.7.2",
+    "haredis": "~0.2.10",
     "moment": "~1.7.0"
   }
 }

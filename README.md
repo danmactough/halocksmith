@@ -1,94 +1,90 @@
-locksmith
-=========
+halocksmith
+===========
 
-distributed locking mechanism using redis
+Distributed locking mechanism using [haredis](https://github.com/carlos8f/haredis)
 
-[![endorse](http://api.coderwall.com/supershabam/endorsecount.png)](http://coderwall.com/supershabam)
+This module is a fork of Ian Hansen's [locksmith](https://github.com/supershabam/locksmith).
+It implements the locking algorithm described in the Redis documentation: http://redis.io/commands/setnx
 
-## use case
-I am trying to maximize the number of calls I can make to the 
-rate-limited Twitter API. I cache the results, but often I
-fire off additional requests to the API for the same data 
-before I finish populating the cache.
 
-I want to hit the API only if the data is not in cache AND no other
-server is currently working to populate the cache.
+## Purpose
 
-## api
+Enables locking (mutex/semaphore) across a clustered node application.
+
+## API
 ```javascript
-var locksmith = require('locksmith')({
-  host: String (optional) - defaults to 'localhost'
-  port: Integer (optional) - defaults to 6379
-  prefix: String (optional) - defaults to '__locksmith:'
-  timeout: Integer (optional) - given in seconds defaults to 120 (two minutes)
-});
+/**
+ * Options:
+ *
+ * nodes {Array} (optional): host/port array; defaults to ['127.0.0.1:6379']; See [haredis](https://github.com/carlos8f/haredis#createclient) for more information
+ * prefix {String} (optional): defaults to '__halocksmith:'
+ * timeout {Number} (optional): given in seconds; defaults to 120 (two minutes)
+ * retries {Number} (optional): number of times to retry acquiring the lock; defaults to 100
+ * redisClient {redisClient} (optional): already instantiated Redis client (other Redis options won't be used)
+ * **any additional options are passed to redis.createClient as options**
+ */
+var lock = require('halocksmith')(options);
 
 /**
- * locksmith is a function
- * 
- * key - the system-wide keyname to lock on (defaults to '')
- * callback - function to execute (the critical code) when you have the lock
- *  callback = function(err, release)
- *  - release is a function that you MUST call when you are done with the lock
+ * lock is a function
+ *
+ * key {String} (optional): the cluster-wide keyname to lock on; defaults to ''
+ * callback {Function}: function to execute when you have the lock; takes two parameters:
+ *     - error {Error}
+ *     - release {Function}: function to call when you are done with the lock (required in most circumstances);
  */
-locksmith([key], callback)
+lock([key], callback)
 ```
 
-
-example
+Example
 -------
 
 ```javascript
-var locksmith = require('locksmith')({
-  timeout: 120 // 2 minutes
+var lock = require('halocksmith')({
+  timeout: 120
 });
 
-// locks are aquired on strings, when this is omitted, you lock
-// on the '' string
-locksmith(function(err, release) {
-  // no need to release if there is an error
-  if (err) return console.error('something went wrong aquiring the lock!', err);
-  
-  // I am the only one running in the ENTIRE application (even on other servers)
+// `key` may be omitted if you only need one lock
+lock(function(err, release) {
+  // Return without releasing the lock if there's an error
+  if (err) return console.error(err);
+
+  // This is the only process in the cluster that acquired the lock
   doSomething();
-  
-  // I'm done now, so let somebody else go
+
+  // Delete the lock; other processes will be able to acquire a new lock
   release();
 });
-
-// let's lock to something more specific, like our api call
-var twitterId = '37344436';
-twitterCache.contains(twitterId, function(err, inCache, data) {
-  if (inCache) return doStuffWithTwitterCacheData(data);
-  
-  // didn't have the data, so let's aquire a lock on populating data
-  locksmith('cache:' + twitterId, function(err, release) {
-    if (err) return console.error(err);
-    
-    // it could be we were not the first to lock, so the cache may be populated now
-    twitterCache.contains(twitterId, function(err, inCache, data) {
-      if (inCache) {
-        release(); // release as soon as possible
-        return doStuffWithTwitterCacheData(data);
-      }
-      
-      // alright, the cache is indeed empty, and we do have the lock
-      twitterService.populateCache(twitterId, function(err) {
-        release(); // always release even when error
-        
-        if (err) return console.error(err);
-      });
-    });
-  });
-});
 ```
+- - -
 
-## similar projects
-https://github.com/PatrickTulskie/redis-lock
+### Developed by [Terra Eclipse](http://www.terraeclipse.com)
+Terra Eclipse, Inc. is a nationally recognized political technology and
+strategy firm located in Aptos, CA and Washington, D.C.
 
-## locking with redis
-http://redis.io/commands/setnx
- 
-## license
-(c) Copyright 2012, Ian Hansen (MIT Licensed).
-See LICENSE for more info.
+- - -
+
+### License: MIT
+Copyright (c) 2013 Dan MacTough ([http://yabfog.com](http://yabfog.com))
+
+Copyright (c) 2013 Terra Eclipse, Inc. ([http://www.terraeclipse.com](http://www.terraeclipse.com))
+
+Portions Copyright (c) 2012, Ian Hansen (//github.com/supershabam)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
