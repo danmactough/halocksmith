@@ -14,13 +14,14 @@ function Locksmith(options) {
   host = options.host || null;
   port = options.port || null;
   prefix = options.prefix || '__locksmith:';
-  timeout = options.timeout || 10;
-  retries = options.retries || 100;
+  timeout = 'timeout' in options ? options.timeout : 10;
+  retries = 'retries' in options ? options.retries : 100;
 
   delete options.host;
   delete options.port;
   delete options.prefix;
   delete options.timeout;
+  delete options.retries;
 
   if (options.redisClient) {
     this._redisClient = options.redisClient;
@@ -59,14 +60,19 @@ Locksmith.prototype.lock = function(key, cb) {
       _this._redisClient.get(fullKey, function handleGet(err, keyExpires) {
         if (err) return cb(err);
 
+        // no retrying allowed and the key doesn't exist, so there is no deadlock to try to fix
+        if (!_this._retries && !keyExpires) {
+          return cb(new Error('failed to acquire lock for: ' + key));
+        }
+
         function retry() {
-          if (retries++ > _this._retries) {
+          if (++retries > _this._retries) {
             return cb(new Error('maximum retries hit while aquiring lock for: ' + key));
           }
           setTimeout(aquire, 1000);
         }
 
-        // if the key has not expired
+        // if the key still exists and has not expired
         if (moment().unix() < keyExpires) {
           return retry();
         } else { // try and aquire expired lock
