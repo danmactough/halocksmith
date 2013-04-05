@@ -1,4 +1,12 @@
 
+v0.0.3 / 2013-04-05
+==================
+
+  * Add travis-ci
+  * Use mocha for tests and add basic test
+  * Fix default timeout
+  * Change option parsing to handle passing only redis config
+
 v0.0.2 / 2013-04-05
 ==================
 
