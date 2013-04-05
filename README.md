@@ -1,11 +1,11 @@
 halocksmith
 ===========
+[![Build Status](https://secure.travis-ci.org/danmactough/halocksmith.png?branch=master)](https://travis-ci.org/danmactough/halocksmith)
 
 Distributed locking mechanism using [haredis](https://github.com/carlos8f/haredis)
 
 This module is a fork of Ian Hansen's [locksmith](https://github.com/supershabam/locksmith).
 It implements the locking algorithm described in the Redis documentation: http://redis.io/commands/setnx
-
 
 ## Purpose
 
