@@ -3,22 +3,20 @@
 /**
  * The locking algorithm used in this is described here: http://redis.io/commands/setnx
  */
-var redis = require('redis')
+var redis = require('haredis')
   , moment = require('moment')
   ;
 
-function Locksmith(options) {
-  var host, port, prefix, timeout, retries;
-  
+function HALocksmith(options) {
+  var nodes, prefix, timeout, retries;
+
   options = options || {};
-  host = options.host || null;
-  port = options.port || null;
-  prefix = options.prefix || '__locksmith:';
+  nodes = options.nodes || ['127.0.0.1:6379'];
+  prefix = options.prefix || '__halocksmith:';
   timeout = 'timeout' in options ? options.timeout : 10;
   retries = 'retries' in options ? options.retries : 100;
 
-  delete options.host;
-  delete options.port;
+  delete options.nodes;
   delete options.prefix;
   delete options.timeout;
   delete options.retries;
@@ -26,7 +24,7 @@ function Locksmith(options) {
   if (options.redisClient) {
     this._redisClient = options.redisClient;
   } else {
-    this._redisClient = redis.createClient(port, host, options);
+    this._redisClient = redis.createClient(nodes, options);
   }
 
   this._prefix = prefix;
@@ -34,7 +32,7 @@ function Locksmith(options) {
   this._retries = retries;
 }
 
-Locksmith.prototype.lock = function(key, cb) {
+HALocksmith.prototype.lock = function(key, cb) {
   var retries = 0
     , _this = this
     , fullKey
@@ -81,7 +79,7 @@ Locksmith.prototype.lock = function(key, cb) {
             if (err) return cb(err);
 
             // if the key is no longer expired, somebody else grabbed it, get back in line
-            if (moment().unix() < keyExpires) {              
+            if (moment().unix() < keyExpires) {
               return retry();
             }
 
@@ -94,7 +92,7 @@ Locksmith.prototype.lock = function(key, cb) {
   })();
 };
 
-Locksmith.prototype._release = function(key, expires) {
+HALocksmith.prototype._release = function(key, expires) {
   var fullKey = this._prefix + key
     , _this = this
     ;
@@ -106,22 +104,22 @@ Locksmith.prototype._release = function(key, expires) {
     });
   } else {
     // it's too late, the lock is already being fought for
-    console.error('you released your lock too late on key: ' + key);    
+    console.error('you released your lock too late on key: ' + key);
   }
 };
 
 /**
  * options = {
- *   redisClient: (optional) - already instantiated redis client (host, port, args will not be used in this case)
- *   host: String (optional) - defaults to 'localhost'
- *   port: Integer (optional) - defaults to 6379
- *   prefix: String (optional) - defaults to '__locksmith:'
- *   timeout: Positive Integer (optional) - seconds for timeout defaults to (120) two minutes
- *   args: any additional arguments are passed to redis.createClient as options
+ *   nodes {Array} (optional): host/port array; defaults to ['127.0.0.1:6379']; See [haredis](https://github.com/carlos8f/haredis#createclient) for more information
+ *   prefix {String} (optional): defaults to '__halocksmith:'
+ *   timeout {Number} (optional): given in seconds; defaults to 120 (two minutes)
+ *   retries {Number} (optional): number of times to retry acquiring the lock; defaults to 100
+ *   redisClient {redisClient} (optional): already instantiated Redis client (other Redis options won't be used)
+ *   **any additional options are passed to redis.createClient as options**
  * }
  */
 module.exports = function(options) {
-  var locksmith = new Locksmith(options);
-  return locksmith.lock.bind(locksmith);
+  var halock = new HALocksmith(options);
+  return halock.lock.bind(halock);
 };
-module.exports.Locksmith = Locksmith;
+module.exports.HALocksmith = HALocksmith;
