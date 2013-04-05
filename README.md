@@ -20,6 +20,7 @@ Enables locking (mutex/semaphore) across a clustered node application.
  * prefix {String} (optional): defaults to '__halocksmith:'
  * timeout {Number} (optional): given in seconds; defaults to 120 (two minutes)
  * retries {Number} (optional): number of times to retry acquiring the lock; defaults to 100
+ * retryTimeout {Number} (optional): given in milliseconds; defaults to 1000 (one second)
  * redisClient {redisClient} (optional): already instantiated Redis client (other Redis options won't be used)
  * **any additional options are passed to redis.createClient as options**
  */

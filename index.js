@@ -8,18 +8,20 @@ var redis = require('haredis')
   ;
 
 function HALocksmith(options) {
-  var nodes, prefix, timeout, retries;
+  var nodes, prefix, timeout, retries, retryTimeout;
 
   options = options || {};
   nodes = options.nodes || ['127.0.0.1:6379'];
   prefix = options.prefix || '__halocksmith:';
   timeout = 'timeout' in options ? options.timeout : 10;
   retries = 'retries' in options ? options.retries : 100;
+  retryTimeout = 'retryTimeout' in options ? options.retryTimeout : 1000;
 
   delete options.nodes;
   delete options.prefix;
   delete options.timeout;
   delete options.retries;
+  delete options.retryTimeout;
 
   if (options.redisClient) {
     this._redisClient = options.redisClient;
@@ -30,6 +32,7 @@ function HALocksmith(options) {
   this._prefix = prefix;
   this._timeout = timeout;
   this._retries = retries;
+  this._retryTimeout = retryTimeout;
 }
 
 HALocksmith.prototype.lock = function(key, cb) {
@@ -67,7 +70,7 @@ HALocksmith.prototype.lock = function(key, cb) {
           if (++retries > _this._retries) {
             return cb(new Error('maximum retries hit while aquiring lock for: ' + key));
           }
-          setTimeout(aquire, 1000);
+          setTimeout(aquire, _this._retryTimeout);
         }
 
         // if the key still exists and has not expired
@@ -114,6 +117,7 @@ HALocksmith.prototype._release = function(key, expires) {
  *   prefix {String} (optional): defaults to '__halocksmith:'
  *   timeout {Number} (optional): given in seconds; defaults to 120 (two minutes)
  *   retries {Number} (optional): number of times to retry acquiring the lock; defaults to 100
+ *   retryTimeout {Number} (optional): given in milliseconds; defaults to 1000 (one second)
  *   redisClient {redisClient} (optional): already instantiated Redis client (other Redis options won't be used)
  *   **any additional options are passed to redis.createClient as options**
  * }
