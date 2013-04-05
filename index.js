@@ -58,7 +58,7 @@ HALocksmith.prototype.lock = function(key, cb) {
       }
 
       // otherwise let's check if the lockholder is expired
-      _this._redisClient.get(fullKey, function handleGet(err, keyExpires) {
+      _this._redisClient.slaveOk(false).get(fullKey, function handleGet(err, keyExpires) {
         if (err) return cb(err);
 
         // no retrying allowed and the key doesn't exist, so there is no deadlock to try to fix
