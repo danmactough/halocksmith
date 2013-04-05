@@ -8,25 +8,58 @@ var redis = require('haredis')
   ;
 
 function HALocksmith(options) {
-  var nodes, prefix, timeout, retries, retryTimeout;
+  var nodes, split, prefix, timeout, retries, retryTimeout;
 
-  options = options || {};
-  nodes = options.nodes || ['127.0.0.1:6379'];
-  prefix = options.prefix || '__halocksmith:';
-  timeout = 'timeout' in options ? options.timeout : 10;
-  retries = 'retries' in options ? options.retries : 100;
-  retryTimeout = 'retryTimeout' in options ? options.retryTimeout : 1000;
+  // Allow passing just the redis config as options
+  if (typeof options === 'string') {
+    split = options.split(':');
+    options = {host: split[0]};
+    if (split[1] && split[1].match(/^\d+$/)) {
+      options.port = parseInt(split[1], 10);
+    }
+  }
+  else if (typeof options === 'number') {
+    options = {port: options};
+  }
+  else if (options && !Array.isArray(options) && options['0']) {
+    // Support for nodes as object, like optimist might produce.
+    nodes = [];
+    Object.keys(options).forEach(function (k) {
+      if (k.match(/^\d+$/)) {
+        nodes.push(options[k]);
+        delete options[k];
+      }
+    });
+    options.nodes = nodes;
+  }
+  else if (Array.isArray(options)) {
+    options = {nodes: options};
+  }
+  // Full option parsing
+  else {
 
-  delete options.nodes;
-  delete options.prefix;
-  delete options.timeout;
-  delete options.retries;
-  delete options.retryTimeout;
+    options = options || { host: '127.0.0.1', port: 6379 };
+    if (options.port && !options.host) options.host = '127.0.0.1';
+    prefix = options.prefix || '__halocksmith:';
+    timeout = 'timeout' in options ? options.timeout : 10;
+    retries = 'retries' in options ? options.retries : 100;
+    retryTimeout = 'retryTimeout' in options ? options.retryTimeout : 1000;
+
+    delete options.prefix;
+    delete options.timeout;
+    delete options.retries;
+    delete options.retryTimeout;
+
+  }
 
   if (options.redisClient) {
     this._redisClient = options.redisClient;
-  } else {
-    this._redisClient = redis.createClient(nodes, options);
+  } else if (options.nodes) {
+    // haredis node list
+    this._redisClient = redis.createClient(options.nodes, options);
+  }
+  else {
+    this._redisClient = redis.createClient(options.port, options.host, options);
   }
 
   this._prefix = prefix;
