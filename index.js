@@ -69,6 +69,7 @@ function HALocksmith(options) {
 }
 
 HALocksmith.prototype.lock = function(key, cb) {
+  var debug = require('debug')('halocksmith:lock');
   var retries = 0
     , _this = this
     , fullKey
@@ -82,14 +83,17 @@ HALocksmith.prototype.lock = function(key, cb) {
 
   (function aquire() {
     var expires = moment().add('seconds', _this._timeout).unix();
+    debug('Acquiring lock %s expiring at %s', fullKey, expires);
     _this._redisClient.setnx(fullKey, expires, function handleSetnx(err, response) {
       if (err) return cb(err);
 
       // if we aquired the lock
       if (response === 1) {
+        debug('Lock %s acquired expiring at %s', fullKey, expires);
         return cb(null, _this._release.bind(_this, key, expires));
       }
 
+      debug('Failed to acquire lock %s - Checking to see if lock is expired', fullKey);
       // otherwise let's check if the lockholder is expired
       _this._redisClient.slaveOk(false).get(fullKey, function handleGet(err, keyExpires) {
         if (err) return cb(err);
@@ -103,6 +107,7 @@ HALocksmith.prototype.lock = function(key, cb) {
           if (++retries > _this._retries) {
             return cb(new Error('maximum retries hit while aquiring lock for: ' + key));
           }
+          debug('Retrying...');
           setTimeout(aquire, _this._retryTimeout);
         }
 
@@ -110,6 +115,7 @@ HALocksmith.prototype.lock = function(key, cb) {
         if (moment().unix() < keyExpires) {
           return retry();
         } else { // try and aquire expired lock
+          debug('Existing lock %s is expired - Will try again to acquire lock', fullKey);
           expires = moment().add('seconds', _this._timeout).unix();
           _this._redisClient.getset(fullKey, expires, function handleGetSet(err, keyExpires) {
             if (err) return cb(err);
@@ -120,6 +126,7 @@ HALocksmith.prototype.lock = function(key, cb) {
             }
 
             // we got the lock!
+            debug('Lock %s acquired expiring at %s', fullKey, expires);
             return cb(null, _this._release.bind(_this, key, expires));
           });
         }
@@ -129,6 +136,7 @@ HALocksmith.prototype.lock = function(key, cb) {
 };
 
 HALocksmith.prototype._release = function(key, expires, callback) {
+  var debug = require('debug')('halocksmith:release');
   var fullKey = this._prefix + key;
 
   // callback is optional
@@ -138,12 +146,14 @@ HALocksmith.prototype._release = function(key, expires, callback) {
 
   // nice! we finished before somebody tries to expires us
   if (moment().unix() < expires) {
+    debug('Releasing lock %s', fullKey);
     this._redisClient.del(fullKey, function handleDel(err) {
       if (err) return callback(err);
       callback();
     });
   } else {
     // it's too late, the lock is already being fought for
+    debug('Cannot release expired lock %s', fullKey);
     callback(new Error('you released your lock after expiration on key: ' + key));
   }
 };
