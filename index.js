@@ -95,7 +95,9 @@ HALocksmith.prototype.lock = function(key, cb) {
 
       debug('Failed to acquire lock %s - Checking to see if lock is expired', fullKey);
       // otherwise let's check if the lockholder is expired
-      _this._redisClient.slaveOk(false).get(fullKey, function handleGet(err, keyExpires) {
+      // redisClient.slaveOk is only a method of haredis, but a consumer may have
+      // passed in a plain ol' redis client
+      (_this._redisClient.slaveOk ? _this._redisClient.slaveOk(false) : _this._redisClient).get(fullKey, function handleGet(err, keyExpires) {
         if (err) return cb(err);
 
         // no retrying allowed and the key doesn't exist, so there is no deadlock to try to fix
