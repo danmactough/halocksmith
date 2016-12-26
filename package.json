@@ -22,11 +22,11 @@
   "author": "Dan MacTough <danmactough@gmail.com> (http://yabfog.com/)",
   "license": "MIT",
   "dependencies": {
-    "debug": "~2.2.0",
+    "debug": "~2.5.2",
     "haredis": "~0.2.10",
-    "moment": "~1.7.0"
+    "moment": "~2.17.1"
   },
   "devDependencies": {
-    "mocha": "~1.9.0"
+    "mocha": "~3.2.0"
   }
 }
