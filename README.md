@@ -1,5 +1,7 @@
 halocksmith
 ===========
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/danmactough/halocksmith.svg)](https://greenkeeper.io/)
 [![Build Status](https://secure.travis-ci.org/danmactough/halocksmith.png?branch=master)](https://travis-ci.org/danmactough/halocksmith)
 
 Distributed locking mechanism using [haredis](https://github.com/carlos8f/haredis)
