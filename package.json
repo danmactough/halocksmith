@@ -22,7 +22,7 @@
   "author": "Dan MacTough <danmactough@gmail.com> (http://yabfog.com/)",
   "license": "MIT",
   "dependencies": {
-    "debug": "~2.6.8",
+    "debug": "~4.1.1",
     "haredis": "~0.2.10",
     "moment": "^2.21.0"
   },
